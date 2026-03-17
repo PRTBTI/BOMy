@@ -4,209 +4,77 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BOM Viewer | Dział Technologiczny BTI Gumkowski</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --bg:       #0a0a0a;
-    --bg2:      #111111;
-    --surface:  #181818;
-    --surface2: #202020;
-    --border:   #2a2a2a;
-    --border2:  #333333;
-    --orange:   #F97316;
-    --orange2:  #EA6A0A;
-    --orange-dim: rgba(249,115,22,0.12);
-    --text:     #EEEEEE;
-    --text2:    #999999;
-    --text3:    #555555;
-    --green:    #22C55E;
-    --blue:     #3B82F6;
-    --purple:   #A855F7;
-    --yellow:   #EAB308;
-    --red:      #EF4444;
-    --pink:     #EC4899;
+    --bg:#0a0a0a; --bg2:#111111; --surface:#181818; --surface2:#202020;
+    --border:#2a2a2a; --border2:#333333;
+    --orange:#F97316; --orange2:#EA6A0A; --orange-dim:rgba(249,115,22,0.12);
+    --text:#EEEEEE; --text2:#999999; --text3:#555555;
+    --green:#22C55E; --blue:#3B82F6; --purple:#A855F7;
+    --yellow:#EAB308; --red:#EF4444; --pink:#EC4899;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;min-height:100vh;overflow-x:auto;}
   body.col-resizing{cursor:col-resize!important;user-select:none;}
 
-  /* ── TOP BAR ── */
-  .topbar{
-    background:#000;
-    border-bottom:1px solid var(--border);
-    height:36px;display:flex;align-items:center;
-    padding:0 20px;gap:16px;
-    position:sticky;top:0;z-index:300;
-  }
-  .topbar-brand{
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:700;font-size:13px;
-    color:var(--text3);letter-spacing:2px;text-transform:uppercase;
-  }
+  .topbar{background:#000;border-bottom:1px solid var(--border);height:36px;display:flex;align-items:center;padding:0 20px;gap:16px;position:sticky;top:0;z-index:300;}
+  .topbar-brand{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
   .topbar-brand span{color:var(--orange);}
   .topbar-sep{width:1px;height:16px;background:var(--border2);}
   .topbar-link{color:var(--text3);font-size:11px;text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color 0.2s;}
   .topbar-link:hover{color:var(--orange);}
   .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
 
-  /* ── HEADER ── */
-  header{
-    background:var(--bg2);
-    border-bottom:3px solid var(--orange);
-    padding:0 20px;height:64px;
-    display:flex;align-items:center;gap:20px;
-    position:sticky;top:36px;z-index:200;
-  }
-
-  /* SVG Logo inline */
-  .logo-wrap{display:flex;align-items:center;gap:14px;text-decoration:none;}
+  header{background:var(--bg2);border-bottom:3px solid var(--orange);padding:0 20px;height:64px;display:flex;align-items:center;gap:20px;position:sticky;top:36px;z-index:200;}
+  .logo-wrap{display:flex;align-items:center;gap:14px;}
   .logo-icon{width:44px;height:44px;flex-shrink:0;}
   .logo-text{display:flex;flex-direction:column;line-height:1;}
-  .logo-main{
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:900;font-size:22px;letter-spacing:1px;
-    color:var(--text);text-transform:uppercase;
-  }
+  .logo-main{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;letter-spacing:1px;color:var(--text);text-transform:uppercase;}
   .logo-main span{color:var(--orange);}
-  .logo-sub{
-    font-family:'Barlow',sans-serif;font-weight:500;font-size:10px;
-    color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-top:2px;
-  }
-
+  .logo-sub{font-family:'Barlow',sans-serif;font-weight:500;font-size:10px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-top:2px;}
   .header-divider{width:1px;height:36px;background:var(--border2);margin:0 8px;}
-  .header-title{
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:700;font-size:18px;
-    color:var(--text2);letter-spacing:2px;text-transform:uppercase;
-  }
-  .header-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
-  .update-badge{
-    background:var(--surface2);border:1px solid var(--border2);
-    border-radius:4px;padding:4px 10px;
-    font-size:11px;color:var(--text3);font-family:'Barlow',monospace;
-  }
+  .header-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;}
+  .header-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
 
-  /* ── TOOLBAR ── */
-  .toolbar{
-    background:var(--surface);
-    border-bottom:1px solid var(--border);
-    padding:10px 20px;
-    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-    position:sticky;top:100px;z-index:190;
-  }
+  .toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:100px;z-index:190;}
   .filter-group{display:flex;align-items:center;gap:6px;}
-  .filter-label{
-    color:var(--text3);font-size:10px;
-    text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap;
-    font-family:'Barlow Condensed',sans-serif;font-weight:600;
-  }
-  select,input[type="text"]{
-    background:var(--bg2);border:1px solid var(--border2);
-    color:var(--text);padding:5px 10px;border-radius:3px;
-    font-family:'Barlow',sans-serif;font-size:12px;outline:none;
-    transition:border-color 0.2s;
-  }
+  .filter-label{color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+  select,input[type="text"]{background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:3px;font-family:'Barlow',sans-serif;font-size:12px;outline:none;transition:border-color 0.2s;}
   select:focus,input:focus{border-color:var(--orange);}
   select{cursor:pointer;min-width:160px;}
   .search-input{min-width:200px;}
-  .btn{
-    background:var(--surface2);border:1px solid var(--border2);
-    color:var(--text2);padding:5px 12px;border-radius:3px;cursor:pointer;
-    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;
-    letter-spacing:1px;text-transform:uppercase;
-    transition:all 0.2s;white-space:nowrap;
-  }
+  .btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:5px 12px;border-radius:3px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;white-space:nowrap;}
   .btn:hover{border-color:var(--orange);color:var(--orange);}
   .btn.primary{background:var(--orange);color:#000;border-color:var(--orange);}
-  .btn.primary:hover{background:var(--orange2);border-color:var(--orange2);}
+  .btn.primary:hover{background:var(--orange2);}
   .sep{width:1px;height:22px;background:var(--border2);margin:0 2px;}
-
-  /* Depth buttons */
   .depth-btns{display:flex;gap:3px;}
-  .depth-btn{
-    width:26px;height:24px;border-radius:3px;border:1px solid var(--border2);
-    background:var(--surface2);color:var(--text3);cursor:pointer;
-    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;
-    display:flex;align-items:center;justify-content:center;transition:all 0.15s;
-  }
+  .depth-btn{width:26px;height:24px;border-radius:3px;border:1px solid var(--border2);background:var(--surface2);color:var(--text3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
   .depth-btn:hover{border-color:var(--orange);color:var(--orange);}
   .depth-btn.active{background:var(--orange);color:#000;border-color:var(--orange);}
 
-  /* Column panel */
   .col-panel{position:relative;}
-  .col-dropdown{
-    display:none;position:absolute;top:calc(100%+6px);left:0;
-    background:var(--surface);border:1px solid var(--border2);
-    border-radius:4px;padding:6px 0;min-width:210px;z-index:999;
-    box-shadow:0 8px 32px rgba(0,0,0,0.7);
-  }
+  .col-dropdown{display:none;position:absolute;top:calc(100%+6px);left:0;background:var(--surface);border:1px solid var(--border2);border-radius:4px;padding:6px 0;min-width:210px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.7);}
   .col-dropdown.open{display:block;}
-  .col-item{
-    display:flex;align-items:center;gap:8px;padding:6px 14px;
-    cursor:pointer;font-size:12px;color:var(--text2);
-    user-select:none;transition:background 0.1s;
-    font-family:'Barlow',sans-serif;
-  }
+  .col-item{display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:12px;color:var(--text2);user-select:none;transition:background 0.1s;}
   .col-item:hover{background:var(--surface2);color:var(--text);}
-  .col-chk{
-    width:14px;height:14px;border:1px solid var(--border2);border-radius:2px;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;
-  }
+  .col-chk{width:14px;height:14px;border:1px solid var(--border2);border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}
   .col-chk.on{background:var(--orange);border-color:var(--orange);}
   .col-chk.on::after{content:'✓';font-size:9px;color:#000;font-weight:800;}
 
-  /* ── STATUS BAR ── */
-  .statusbar{
-    padding:5px 20px;display:flex;gap:16px;align-items:center;
-    border-bottom:1px solid var(--border);background:var(--bg);
-  }
+  .statusbar{padding:5px 20px;display:flex;gap:16px;align-items:center;border-bottom:1px solid var(--border);background:var(--bg);}
   .stat{color:var(--text3);font-size:11px;font-family:'Barlow',monospace;}
   .stat b{color:var(--orange);}
   .stat-sep{width:1px;height:12px;background:var(--border2);}
 
-  /* ── MAIN ── */
   .main{padding:16px 20px;}
-
-  /* Config banner */
-  .config-banner{
-    background:rgba(249,115,22,0.06);
-    border:1px solid rgba(249,115,22,0.3);
-    border-left:4px solid var(--orange);
-    border-radius:4px;padding:16px 20px;margin-bottom:16px;
-    display:flex;align-items:flex-start;gap:14px;
-  }
-  .config-banner p{color:var(--text2);font-size:13px;line-height:1.6;}
-  .config-banner code{background:var(--surface2);padding:1px 6px;border-radius:3px;color:var(--orange);font-size:11px;}
-  .url-row{display:flex;gap:8px;margin-top:8px;}
-  .url-row input{flex:1;font-size:12px;}
-
-  /* Loading */
-  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:16px;}
-  .spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .loading-text{color:var(--text3);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;}
-  .error-box{background:#1a0800;border:1px solid #cc3300;border-left:4px solid #F97316;border-radius:4px;padding:14px 18px;color:#ff8855;margin:16px 0;font-size:13px;}
-
-  /* ── TABLE ── */
   .table-wrap{overflow-x:auto;}
   .bom-table{border-collapse:collapse;table-layout:fixed;}
-  .bom-table th{
-    background:var(--surface);color:var(--text3);
-    font-size:10px;font-family:'Barlow Condensed',sans-serif;
-    font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
-    padding:8px 10px;text-align:left;
-    border-bottom:2px solid var(--orange);
-    border-right:1px solid var(--border);
-    white-space:nowrap;overflow:hidden;
-    position:relative;user-select:none;
-  }
-  .bom-table th:first-child{border-left:none;}
-  .resize-handle{
-    position:absolute;right:0;top:0;bottom:0;width:5px;
-    cursor:col-resize;background:transparent;transition:background 0.15s;z-index:10;
-  }
+  .bom-table th{background:var(--surface);color:var(--text3);font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:8px 10px;text-align:left;border-bottom:2px solid var(--orange);border-right:1px solid var(--border);white-space:nowrap;overflow:hidden;position:relative;user-select:none;}
+  .resize-handle{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;background:transparent;transition:background 0.15s;z-index:10;}
   .resize-handle:hover,.resize-handle.active{background:var(--orange);}
-
   .bom-row{border-bottom:1px solid var(--border);transition:background 0.08s;}
   .bom-row:hover{background:var(--surface);}
   .bom-row.hidden{display:none;}
@@ -216,27 +84,14 @@
   .bom-row.level-4 td:first-child{border-left:3px solid var(--yellow);}
   .bom-row.level-5 td:first-child{border-left:3px solid var(--red);}
   .bom-row.level-6 td:first-child{border-left:3px solid var(--pink);}
-
-  .bom-row td{
-    padding:6px 10px;vertical-align:middle;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    border-right:1px solid var(--border);font-size:13px;
-  }
+  .bom-row td{padding:6px 10px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--border);font-size:13px;}
   .bom-row td.wrap{white-space:normal;}
   .col-hidden{display:none!important;}
-
   .lp-cell{display:flex;align-items:center;gap:5px;}
   .indent{display:inline-block;flex-shrink:0;}
-  .toggle-btn{
-    width:16px;height:16px;border-radius:2px;
-    border:1px solid var(--border2);background:var(--surface2);
-    color:var(--text3);cursor:pointer;font-size:10px;
-    display:inline-flex;align-items:center;justify-content:center;
-    flex-shrink:0;transition:all 0.15s;font-family:'Barlow',monospace;font-weight:700;
-  }
+  .toggle-btn{width:16px;height:16px;border-radius:2px;border:1px solid var(--border2);background:var(--surface2);color:var(--text3);cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;font-family:'Barlow',monospace;font-weight:700;}
   .toggle-btn:hover{border-color:var(--orange);color:var(--orange);background:var(--orange-dim);}
   .toggle-btn.leaf{border-color:transparent;background:transparent;cursor:default;color:var(--border2);}
-
   .lp-value{font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;}
   .level-1 .lp-value{color:var(--orange);}
   .level-2 .lp-value{color:var(--blue);}
@@ -244,65 +99,60 @@
   .level-4 .lp-value{color:var(--yellow);}
   .level-5 .lp-value{color:var(--red);}
   .level-6 .lp-value{color:var(--pink);}
-
   .col-nazwa{font-weight:600;color:var(--text);}
   .col-opis{color:var(--text2);font-size:12px;}
   .col-szt{color:var(--orange);text-align:right;font-weight:700;}
   .col-idx{color:var(--text2);font-size:12px;font-family:'Barlow',monospace;}
-  .col-ops{
-    color:#000;font-size:11px;font-weight:700;
-    background:var(--orange);padding:2px 7px;border-radius:2px;
-    font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;
-    white-space:nowrap;display:inline-block;
-  }
+  .col-ops{color:#000;font-size:11px;font-weight:700;background:var(--orange);padding:2px 7px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;white-space:nowrap;display:inline-block;}
   .empty-ops{color:var(--text3);}
   mark{background:rgba(249,115,22,0.25);color:var(--orange);border-radius:2px;padding:0 1px;}
+  .error-box{background:#1a0800;border:1px solid #cc3300;border-left:4px solid var(--orange);border-radius:4px;padding:14px 18px;color:#ff8855;margin:16px 0;font-size:13px;line-height:1.6;}
+  .error-box code{background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:3px;color:var(--orange);font-size:11px;}
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:16px;}
+  .spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{color:var(--text3);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;}
+  .loading-sub{color:var(--text3);font-size:11px;margin-top:-8px;}
 
-  /* ── FOOTER ── */
-  footer{
-    background:var(--bg2);border-top:1px solid var(--border);
-    padding:12px 20px;display:flex;align-items:center;gap:16px;
-    font-size:11px;color:var(--text3);font-family:'Barlow',sans-serif;
-  }
+  /* INFO BANNER */
+  .info-banner{background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.25);border-left:4px solid var(--orange);border-radius:4px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.7;}
+  .info-banner strong{color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;}
+  .info-banner code{background:var(--surface2);padding:1px 6px;border-radius:3px;color:var(--orange);font-size:11px;}
+  .info-steps{margin-top:10px;display:flex;flex-direction:column;gap:4px;}
+  .info-step{display:flex;align-items:baseline;gap:8px;}
+  .step-num{color:var(--orange);font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:13px;flex-shrink:0;}
+
+  footer{background:var(--bg2);border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text3);}
   footer span{color:var(--orange);}
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
   <span class="topbar-brand">BTI <span>Gumkowski</span></span>
   <div class="topbar-sep"></div>
   <a class="topbar-link" href="https://bti-gumkowski.pl" target="_blank">bti-gumkowski.pl</a>
   <a class="topbar-link" href="https://kipi.pl" target="_blank">kipi.pl</a>
   <div class="topbar-right">
-    <span id="last-update" class="topbar-brand" style="color:var(--text3);font-size:11px;font-weight:400;letter-spacing:1px;">—</span>
+    <span id="last-update" style="color:var(--text3);font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;">—</span>
   </div>
 </div>
 
-<!-- HEADER -->
 <header>
   <div class="logo-wrap">
-    <!-- SVG logo działu - hexagon + gear + spark -->
     <svg class="logo-icon" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Gear -->
       <circle cx="22" cy="22" r="19" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
       <circle cx="22" cy="22" r="14" fill="#111" stroke="#F97316" stroke-width="1.5"/>
-      <!-- Gear teeth simplified -->
       <rect x="20.5" y="3" width="3" height="5" rx="1" fill="#F97316"/>
       <rect x="20.5" y="36" width="3" height="5" rx="1" fill="#F97316"/>
       <rect x="3" y="20.5" width="5" height="3" rx="1" fill="#F97316"/>
       <rect x="36" y="20.5" width="5" height="3" rx="1" fill="#F97316"/>
-      <!-- Diagonal teeth -->
       <rect x="7" y="7" width="3" height="5" rx="1" fill="#F97316" transform="rotate(45 8.5 9.5)"/>
       <rect x="34" y="7" width="3" height="5" rx="1" fill="#F97316" transform="rotate(-45 35.5 9.5)"/>
       <rect x="7" y="32" width="3" height="5" rx="1" fill="#F97316" transform="rotate(-45 8.5 34.5)"/>
       <rect x="34" y="32" width="3" height="5" rx="1" fill="#F97316" transform="rotate(45 35.5 34.5)"/>
-      <!-- Hexagon inner -->
       <polygon points="22,11 29,15.5 29,24.5 22,29 15,24.5 15,15.5" fill="#1a1a1a" stroke="#F97316" stroke-width="1.5"/>
-      <!-- CNC tool tip -->
       <circle cx="22" cy="20" r="3" fill="#F97316"/>
-      <!-- Spark lines -->
       <line x1="22" y1="20" x2="26" y2="24" stroke="#FFB347" stroke-width="1.5" stroke-linecap="round"/>
       <line x1="22" y1="20" x2="25" y2="26" stroke="#FF8C00" stroke-width="1" stroke-linecap="round"/>
       <line x1="22" y1="20" x2="28" y2="22" stroke="#FFB347" stroke-width="1" stroke-linecap="round"/>
@@ -319,8 +169,7 @@
   </div>
 </header>
 
-<!-- TOOLBAR -->
-<div class="toolbar">
+<div class="toolbar" id="toolbar" style="display:none">
   <div class="filter-group">
     <span class="filter-label">Produkt</span>
     <select id="filter-produkt"><option value="">— wszystkie —</option></select>
@@ -358,35 +207,32 @@
   <button class="btn" onclick="collapseAll()">▶ Zwiń</button>
 </div>
 
-<!-- STATUS BAR -->
-<div class="statusbar">
+<div class="statusbar" id="statusbar" style="display:none">
   <div class="stat">Wiersze: <b id="stat-total">—</b></div>
   <div class="stat-sep"></div>
   <div class="stat">Widoczne: <b id="stat-visible">—</b></div>
   <div class="stat-sep"></div>
   <div class="stat">Produkty: <b id="stat-products">—</b></div>
   <div style="flex:1"></div>
-  <div class="stat" style="font-size:10px;letter-spacing:1px">↔ PRZECIĄGNIJ KRAWĘDŹ NAGŁÓWKA ABY ZMIENIĆ SZEROKOŚĆ</div>
+  <div class="stat" style="font-size:10px;letter-spacing:1px">↔ PRZECIĄGNIJ KRAWĘDŹ NAGŁÓWKA</div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
-  <div class="config-banner" id="config-banner">
-    <div style="font-size:22px;flex-shrink:0">⚙</div>
-    <div>
-      <p><strong style="color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:1px;text-transform:uppercase">Konfiguracja połączenia z Google Sheets</strong><br>
-      Wklej URL Google Apps Script Web App opublikowanego jako "Anyone":<br>
-      <code>https://script.google.com/macros/s/AKfycb.../exec</code></p>
-      <div class="url-row">
-        <input type="text" id="apps-script-url" placeholder="https://script.google.com/macros/s/.../exec">
-        <button class="btn primary" onclick="saveUrl()">Zapisz i załaduj</button>
-      </div>
+  <div id="info-banner" class="info-banner" style="display:none">
+    <strong>Jak zaktualizować dane?</strong><br>
+    Wgraj nowy plik Excel na GitHub, a strona automatycznie pobierze go po odświeżeniu.
+    <div class="info-steps">
+      <div class="info-step"><span class="step-num">1.</span><span>Wejdź na <code>github.com/PRTBTI/BOMy</code></span></div>
+      <div class="info-step"><span class="step-num">2.</span><span>Kliknij <code>Add file → Upload files</code></span></div>
+      <div class="info-step"><span class="step-num">3.</span><span>Wgraj plik o nazwie dokładnie <code>BOM_-_BAZA.xlsx</code> (zastępując stary)</span></div>
+      <div class="info-step"><span class="step-num">4.</span><span>Kliknij <code>Commit changes</code> — po ~1 minucie dane będą widoczne dla wszystkich</span></div>
     </div>
   </div>
   <div id="error-area"></div>
-  <div class="loading" id="loading" style="display:none">
+  <div class="loading" id="loading">
     <div class="spinner"></div>
-    <div class="loading-text">Pobieranie danych z Google Sheets</div>
+    <div class="loading-text">Pobieranie pliku Excel z GitHub</div>
+    <div class="loading-sub" id="loading-sub">Łączenie z repozytorium...</div>
   </div>
   <div class="table-wrap">
     <table class="bom-table" id="bom-table" style="display:none">
@@ -396,7 +242,6 @@
   </div>
 </div>
 
-<!-- FOOTER -->
 <footer>
   <span>BTI Gumkowski</span> · Dział Technologiczny · BOM Viewer
   <div style="flex:1"></div>
@@ -404,7 +249,16 @@
 </footer>
 
 <script>
-let APPS_SCRIPT_URL = localStorage.getItem('bom_script_url') || '';
+// ── KONFIGURACJA ─────────────────────────────────────────────
+// Zmień REPO_USER i REPO_NAME jeśli repo ma inną nazwę
+const REPO_USER = 'PRTBTI';
+const REPO_NAME = 'BOMy';
+const FILE_NAME = 'BOM_-_BAZA.xlsx';
+const SHEET_NAME = 'BOMy';
+// URL do pliku raw na GitHub (omija cache przeglądarki przez timestamp)
+const FILE_URL = () => `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${FILE_NAME}?t=${Date.now()}`;
+// ─────────────────────────────────────────────────────────────
+
 let allRows = [];
 let currentDepth = 'all';
 let expandedNodes = new Set();
@@ -431,7 +285,7 @@ function saveColState(){const s={};COLUMNS.forEach(c=>{s[c.key]={visible:c.visib
 
 window.addEventListener('DOMContentLoaded',()=>{
   loadColState();
-  if(APPS_SCRIPT_URL){document.getElementById('apps-script-url').value=APPS_SCRIPT_URL;document.getElementById('config-banner').style.display='none';loadData();}
+  loadData();
   document.getElementById('depth-btns').addEventListener('click',e=>{const btn=e.target.closest('.depth-btn');if(!btn)return;document.querySelectorAll('.depth-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentDepth=btn.dataset.depth;applyDepthFilter();});
   let st;document.getElementById('search').addEventListener('input',()=>{clearTimeout(st);st=setTimeout(renderTable,300);});
   document.getElementById('filter-produkt').addEventListener('change',renderTable);
@@ -439,27 +293,63 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('click',e=>{if(!document.getElementById('col-panel').contains(e.target))document.getElementById('col-dropdown').classList.remove('open');});
 });
 
-function saveUrl(){const url=document.getElementById('apps-script-url').value.trim();if(!url)return;APPS_SCRIPT_URL=url;localStorage.setItem('bom_script_url',url);document.getElementById('config-banner').style.display='none';loadData();}
-
-function loadData(){
-  if(!APPS_SCRIPT_URL)return;
+async function loadData(){
   document.getElementById('loading').style.display='flex';
   document.getElementById('bom-table').style.display='none';
+  document.getElementById('toolbar').style.display='none';
+  document.getElementById('statusbar').style.display='none';
   document.getElementById('error-area').innerHTML='';
-  const cb='bom_'+Date.now();const sc=document.createElement('script');
-  window[cb]=d=>{document.getElementById('loading').style.display='none';document.head.removeChild(sc);delete window[cb];processData(d);};
-  sc.onerror=()=>{document.getElementById('loading').style.display='none';showError('Nie można połączyć się z Apps Script. Sprawdź URL i upewnij się że Web App jest opublikowany jako "Anyone".');};
-  sc.src=APPS_SCRIPT_URL+'?callback='+cb;document.head.appendChild(sc);
-  document.getElementById('last-update').textContent='Ostatnia aktualizacja: '+new Date().toLocaleTimeString('pl-PL');
-}
-function showError(msg){document.getElementById('error-area').innerHTML=`<div class="error-box">⚠ ${msg}</div>`;}
+  document.getElementById('info-banner').style.display='none';
+  document.getElementById('loading-sub').textContent='Pobieranie: '+FILE_NAME;
 
-function processData(data){
-  allRows=data.rows.map((row,i)=>{const lp=(row['Lp.']||'').trim();return{...row,_lp:lp,_level:lp?lp.split('.').length:0,_rowIdx:i,_hasChildren:false};});
+  try{
+    const resp = await fetch(FILE_URL());
+    if(!resp.ok) throw new Error(`HTTP ${resp.status} — plik nie istnieje w repozytorium lub repo jest prywatne.`);
+    document.getElementById('loading-sub').textContent='Przetwarzanie arkusza...';
+    const buf = await resp.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(buf),{type:'array'});
+
+    // Znajdź arkusz BOMy lub pierwszy dostępny
+    const preferred=['BOMy','BOM','bomy','bom'];
+    let sheet=wb.SheetNames[0];
+    for(const p of preferred){const f=wb.SheetNames.find(s=>s.toLowerCase()===p.toLowerCase());if(f){sheet=f;break;}}
+
+    const ws=wb.Sheets[sheet];
+    const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    if(raw.length<2)throw new Error('Arkusz jest pusty.');
+
+    const headers=raw[0].map(h=>String(h||'').trim());
+    const rows=[];
+    for(let i=1;i<raw.length;i++){
+      const row={};headers.forEach((h,j)=>{row[h]=raw[i][j]!==undefined&&raw[i][j]!==null?String(raw[i][j]).trim():'';});
+      if(Object.values(row).some(v=>v!==''))rows.push(row);
+    }
+
+    document.getElementById('loading').style.display='none';
+    document.getElementById('last-update').textContent='Aktualizacja: '+new Date().toLocaleTimeString('pl-PL');
+    document.getElementById('info-banner').style.display='block';
+    processData(rows,sheet);
+
+  }catch(err){
+    document.getElementById('loading').style.display='none';
+    let msg=`Nie można pobrać pliku <code>${FILE_NAME}</code> z GitHub.<br><br>`;
+    msg+=`<strong>Sprawdź:</strong><br>`;
+    msg+=`• Czy plik <code>${FILE_NAME}</code> istnieje w repozytorium <code>${REPO_USER}/${REPO_NAME}</code>?<br>`;
+    msg+=`• Czy repozytorium jest publiczne?<br>`;
+    msg+=`• Szczegóły błędu: <code>${err.message}</code>`;
+    document.getElementById('error-area').innerHTML=`<div class="error-box">⚠ ${msg}</div>`;
+    document.getElementById('info-banner').style.display='block';
+  }
+}
+
+function processData(rows,sheetName){
+  allRows=rows.map((row,i)=>{const lp=(row['Lp.']||'').trim();return{...row,_lp:lp,_level:lp?lp.split('.').length:0,_rowIdx:i,_hasChildren:false};});
   for(let i=0;i<allRows.length-1;i++)if(allRows[i+1]._level>allRows[i]._level)allRows[i]._hasChildren=true;
-  populateFilters();buildHeader();buildColPanel();
+  document.getElementById('toolbar').style.display='flex';
+  document.getElementById('statusbar').style.display='flex';
   document.getElementById('stat-total').textContent=allRows.length;
-  renderTable();
+  populateFilters();buildHeader();buildColPanel();
+  expandedNodes=new Set();renderTable();
 }
 
 function populateFilters(){
@@ -496,13 +386,8 @@ function buildColPanel(){
   COLUMNS.forEach((col,idx)=>{
     const item=document.createElement('div');item.className='col-item';
     item.innerHTML=`<div class="col-chk ${col.visible?'on':''}" id="chk${idx}"></div><span>${col.label}</span>`;
-    item.addEventListener('click',()=>{
-      COLUMNS[idx].visible=!COLUMNS[idx].visible;
-      document.getElementById('chk'+idx).classList.toggle('on',COLUMNS[idx].visible);
-      document.getElementById('th-'+idx).classList.toggle('col-hidden',!COLUMNS[idx].visible);
-      document.querySelectorAll(`.bom-row td[data-col="${COLUMNS[idx].key}"]`).forEach(td=>td.classList.toggle('col-hidden',!COLUMNS[idx].visible));
-      saveColState();
-    });dd.appendChild(item);
+    item.addEventListener('click',()=>{COLUMNS[idx].visible=!COLUMNS[idx].visible;document.getElementById('chk'+idx).classList.toggle('on',COLUMNS[idx].visible);document.getElementById('th-'+idx).classList.toggle('col-hidden',!COLUMNS[idx].visible);document.querySelectorAll(`.bom-row td[data-col="${COLUMNS[idx].key}"]`).forEach(td=>td.classList.toggle('col-hidden',!COLUMNS[idx].visible));saveColState();});
+    dd.appendChild(item);
   });
 }
 function toggleColPanel(){document.getElementById('col-dropdown').classList.toggle('open');}
