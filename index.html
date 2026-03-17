@@ -114,13 +114,33 @@
   .loading-text{color:var(--text3);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;}
   .loading-sub{color:var(--text3);font-size:11px;margin-top:-8px;}
 
-  /* INFO BANNER */
-  .info-banner{background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.25);border-left:4px solid var(--orange);border-radius:4px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.7;}
-  .info-banner strong{color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;}
-  .info-banner code{background:var(--surface2);padding:1px 6px;border-radius:3px;color:var(--orange);font-size:11px;}
-  .info-steps{margin-top:10px;display:flex;flex-direction:column;gap:4px;}
-  .info-step{display:flex;align-items:baseline;gap:8px;}
-  .step-num{color:var(--orange);font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:13px;flex-shrink:0;}
+  /* HELP TOOLTIP */
+  .help-wrap{position:relative;display:inline-flex;align-items:center;}
+  .help-btn{
+    width:22px;height:22px;border-radius:50%;
+    border:1px solid var(--border2);background:var(--surface2);
+    color:var(--text3);cursor:pointer;font-size:11px;font-weight:700;
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:all 0.2s;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;
+    line-height:1;
+  }
+  .help-btn:hover{border-color:var(--orange);color:var(--orange);background:var(--orange-dim);}
+  .help-btn.open{border-color:var(--orange);color:var(--orange);background:var(--orange-dim);}
+  .help-popup{
+    display:none;position:absolute;top:calc(100%+8px);right:0;
+    background:var(--surface);border:1px solid var(--border2);
+    border-top:2px solid var(--orange);
+    border-radius:4px;padding:14px 16px;
+    width:320px;z-index:999;
+    box-shadow:0 8px 32px rgba(0,0,0,0.7);
+    font-size:12px;color:var(--text2);line-height:1.7;
+  }
+  .help-popup.open{display:block;}
+  .help-popup strong{color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:8px;}
+  .help-popup code{background:var(--bg2);padding:1px 5px;border-radius:3px;color:var(--orange);font-size:11px;}
+  .help-steps{display:flex;flex-direction:column;gap:5px;}
+  .help-step{display:flex;align-items:baseline;gap:8px;}
+  .help-step-num{color:var(--orange);font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:13px;flex-shrink:0;min-width:16px;}
 
   footer{background:var(--bg2);border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text3);}
   footer span{color:var(--orange);}
@@ -165,6 +185,18 @@
   <div class="header-divider"></div>
   <div class="header-title">Przeglądarka Struktury BOM</div>
   <div class="header-right">
+    <div class="help-wrap" id="help-wrap">
+      <button class="help-btn" id="help-btn" onclick="toggleHelp()" title="Jak aktualizować dane?">?</button>
+      <div class="help-popup" id="help-popup">
+        <strong>Jak zaktualizować dane?</strong>
+        <div class="help-steps">
+          <div class="help-step"><span class="help-step-num">1.</span><span>Wejdź na <code>github.com/PRTBTI/BOMy</code></span></div>
+          <div class="help-step"><span class="help-step-num">2.</span><span>Kliknij <code>Add file → Upload files</code></span></div>
+          <div class="help-step"><span class="help-step-num">3.</span><span>Wgraj plik o nazwie dokładnie <code>BOM_-_BAZA.xlsx</code> zastępując stary</span></div>
+          <div class="help-step"><span class="help-step-num">4.</span><span>Kliknij <code>Commit changes</code> — po ~1 min dane widoczne dla wszystkich</span></div>
+        </div>
+      </div>
+    </div>
     <button class="btn primary" onclick="loadData()">↻ Odśwież dane</button>
   </div>
 </header>
@@ -218,16 +250,6 @@
 </div>
 
 <div class="main">
-  <div id="info-banner" class="info-banner" style="display:none">
-    <strong>Jak zaktualizować dane?</strong><br>
-    Wgraj nowy plik Excel na GitHub, a strona automatycznie pobierze go po odświeżeniu.
-    <div class="info-steps">
-      <div class="info-step"><span class="step-num">1.</span><span>Wejdź na <code>github.com/PRTBTI/BOMy</code></span></div>
-      <div class="info-step"><span class="step-num">2.</span><span>Kliknij <code>Add file → Upload files</code></span></div>
-      <div class="info-step"><span class="step-num">3.</span><span>Wgraj plik o nazwie dokładnie <code>BOM_-_BAZA.xlsx</code> (zastępując stary)</span></div>
-      <div class="info-step"><span class="step-num">4.</span><span>Kliknij <code>Commit changes</code> — po ~1 minucie dane będą widoczne dla wszystkich</span></div>
-    </div>
-  </div>
   <div id="error-area"></div>
   <div class="loading" id="loading">
     <div class="spinner"></div>
@@ -290,7 +312,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   let st;document.getElementById('search').addEventListener('input',()=>{clearTimeout(st);st=setTimeout(renderTable,300);});
   document.getElementById('filter-produkt').addEventListener('change',renderTable);
   document.getElementById('filter-erp').addEventListener('change',renderTable);
-  document.addEventListener('click',e=>{if(!document.getElementById('col-panel').contains(e.target))document.getElementById('col-dropdown').classList.remove('open');});
+  document.addEventListener('click',e=>{
+    if(!document.getElementById('col-panel').contains(e.target))document.getElementById('col-dropdown').classList.remove('open');
+    const wrap=document.getElementById('help-wrap');
+    if(wrap&&!wrap.contains(e.target)){document.getElementById('help-btn').classList.remove('open');document.getElementById('help-popup').classList.remove('open');}
+  });
 });
 
 async function loadData(){
@@ -327,7 +353,7 @@ async function loadData(){
 
     document.getElementById('loading').style.display='none';
     document.getElementById('last-update').textContent='Aktualizacja: '+new Date().toLocaleTimeString('pl-PL');
-    document.getElementById('info-banner').style.display='block';
+    document.getElementById('info-banner') && (document.getElementById('info-banner').style.display='none');
     processData(rows,sheet);
 
   }catch(err){
@@ -338,9 +364,24 @@ async function loadData(){
     msg+=`• Czy repozytorium jest publiczne?<br>`;
     msg+=`• Szczegóły błędu: <code>${err.message}</code>`;
     document.getElementById('error-area').innerHTML=`<div class="error-box">⚠ ${msg}</div>`;
-    document.getElementById('info-banner').style.display='block';
   }
 }
+
+function toggleHelp(){
+  const btn=document.getElementById('help-btn');
+  const popup=document.getElementById('help-popup');
+  btn.classList.toggle('open');
+  popup.classList.toggle('open');
+}
+
+// Close help on outside click
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('help-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('help-btn').classList.remove('open');
+    document.getElementById('help-popup').classList.remove('open');
+  }
+});
 
 function processData(rows,sheetName){
   allRows=rows.map((row,i)=>{const lp=(row['Lp.']||'').trim();return{...row,_lp:lp,_level:lp?lp.split('.').length:0,_rowIdx:i,_hasChildren:false};});
