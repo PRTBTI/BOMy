@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOM Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e28;
+    --border: #252a38;
+    --accent: #00e5a0;
+    --accent2: #0066ff;
+    --text: #e8eaf0;
+    --text2: #7a8099;
+    --text3: #4a5068;
+    --warn: #ff6b35;
+    --level1: #00e5a0;
+    --level2: #0099ff;
+    --level3: #a855f7;
+    --level4: #f59e0b;
+    --level5: #ef4444;
+    --level6: #ec4899;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+
+  .logo span { color: var(--text2); font-weight: 400; }
+
+  /* TOOLBAR */
+  .toolbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .filter-label {
+    color: var(--text3);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  select, input[type="text"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input:focus {
+    border-color: var(--accent);
+  }
+
+  select { cursor: pointer; min-width: 140px; }
+
+  .search-input { min-width: 200px; }
+
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+  .btn.accent:hover { opacity: 0.85; }
+
+  .separator { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+  /* STATUS BAR */
+  .statusbar {
+    padding: 6px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .stat { color: var(--text3); font-size: 11px; }
+  .stat span { color: var(--accent); }
+
+  /* LEVEL DEPTH SELECTOR */
+  .depth-btns {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .depth-btn {
+    width: 28px;
+    height: 24px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .depth-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .depth-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+  /* MAIN TABLE AREA */
+  .main {
+    padding: 16px 24px;
+  }
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    gap: 16px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { color: var(--text3); font-size: 12px; }
+
+  .error-box {
+    background: #1a0a0a;
+    border: 1px solid #ff3333;
+    border-radius: 6px;
+    padding: 16px 20px;
+    color: #ff6666;
+    margin: 20px 0;
+  }
+
+  /* BOM TREE */
+  .bom-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .bom-table th {
+    background: var(--surface);
+    color: var(--text3);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 56px;
+    white-space: nowrap;
+  }
+
+  .bom-row {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .bom-row:hover { background: var(--surface); }
+
+  .bom-row.hidden { display: none; }
+
+  .bom-row td {
+    padding: 7px 10px;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  .bom-row td.wrap { white-space: normal; max-width: 320px; }
+
+  /* LPW CELL — z wcięciem i togglem */
+  .lp-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 120px;
+  }
+
+  .indent { display: inline-block; }
+
+  .toggle-btn {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+  }
+
+  .toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .toggle-btn.leaf { border-color: transparent; background: transparent; cursor: default; color: var(--text3); }
+
+  .lp-value {
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  /* Level colors */
+  .level-1 .lp-value { color: var(--level1); }
+  .level-2 .lp-value { color: var(--level2); }
+  .level-3 .lp-value { color: var(--level3); }
+  .level-4 .lp-value { color: var(--level4); }
+  .level-5 .lp-value { color: var(--level5); }
+  .level-6 .lp-value { color: var(--level6); }
+
+  .col-nazwa { font-weight: 500; color: var(--text); }
+  .col-opis { color: var(--text2); font-size: 12px; }
+  .col-szt { color: var(--accent); text-align: right; }
+  .col-index { color: var(--text2); font-size: 11px; }
+  .col-ops {
+    color: var(--warn);
+    font-size: 11px;
+    background: rgba(255,107,53,0.08);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .empty-ops { color: var(--text3); }
+
+  /* Highlight search */
+  mark {
+    background: rgba(0,229,160,0.25);
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* URL config */
+  .config-banner {
+    background: rgba(0,102,255,0.1);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .config-banner .icon { font-size: 18px; flex-shrink: 0; }
+  .config-banner p { color: var(--text2); font-size: 12px; line-height: 1.6; }
+  .config-banner code {
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .url-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .url-input-row input {
+    flex: 1;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">BOM<span>viewer</span></div>
+  <div style="flex:1"></div>
+  <div style="color:var(--text3); font-size:11px;" id="last-update">—</div>
+</header>
+
+<div class="toolbar">
+  <div class="filter-group">
+    <span class="filter-label">Produkt</span>
+    <select id="filter-produkt"><option value="">— wszystkie —</option></select>
+  </div>
+  <div class="separator"></div>
+  <div class="filter-group">
+    <span class="filter-label">Operacje ERP</span>
+    <select id="filter-erp"><option value="">— wszystkie —</option></select>
+  </div>
+  <div class="separator"></div>
+  <div class="filter-group">
+    <span class="filter-label">Głębokość</span>
+    <div class="depth-btns" id="depth-btns">
+      <div class="depth-btn active" data-depth="all">∞</div>
+      <div class="depth-btn" data-depth="1">1</div>
+      <div class="depth-btn" data-depth="2">2</div>
+      <div class="depth-btn" data-depth="3">3</div>
+      <div class="depth-btn" data-depth="4">4</div>
+      <div class="depth-btn" data-depth="5">5</div>
+      <div class="depth-btn" data-depth="6">6</div>
+    </div>
+  </div>
+  <div class="separator"></div>
+  <div class="filter-group">
+    <span class="filter-label">Szukaj</span>
+    <input type="text" class="search-input" id="search" placeholder="nazwa, opis, index...">
+  </div>
+  <div class="separator"></div>
+  <button class="btn" onclick="expandAll()">Rozwiń wszystko</button>
+  <button class="btn" onclick="collapseAll()">Zwiń wszystko</button>
+  <button class="btn accent" onclick="loadData()">↻ Odśwież</button>
+</div>
+
+<div class="statusbar">
+  <div class="stat">Wiersze: <span id="stat-total">—</span></div>
+  <div class="stat">Widoczne: <span id="stat-visible">—</span></div>
+  <div class="stat">Produkty: <span id="stat-products">—</span></div>
+</div>
+
+<div class="main">
+  <!-- Config banner — ukrywa się po ustawieniu URL -->
+  <div class="config-banner" id="config-banner">
+    <div class="icon">⚙️</div>
+    <div>
+      <p><strong style="color:var(--text)">Wklej URL swojego Google Apps Script Web App</strong><br>
+      Po opublikowaniu skryptu jako Web App, skopiuj URL i wklej poniżej. URL wygląda jak:<br>
+      <code>https://script.google.com/macros/s/AKfycb.../exec</code></p>
+      <div class="url-input-row">
+        <input type="text" id="apps-script-url" placeholder="https://script.google.com/macros/s/.../exec">
+        <button class="btn accent" onclick="saveUrl()">Zapisz i załaduj</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="content">
+    <div class="loading" id="loading" style="display:none">
+      <div class="spinner"></div>
+      <div class="loading-text">Pobieranie danych z Google Sheets...</div>
+    </div>
+    <div id="error-area"></div>
+    <table class="bom-table" id="bom-table" style="display:none">
+      <thead>
+        <tr>
+          <th>Lp.</th>
+          <th>Nazwa</th>
+          <th class="wrap">Opis</th>
+          <th>Szt.</th>
+          <th>Materiał</th>
+          <th>Index ERP</th>
+          <th>Operacje ERP</th>
+          <th>Typ</th>
+        </tr>
+      </thead>
+      <tbody id="bom-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────
+let APPS_SCRIPT_URL = localStorage.getItem('bom_script_url') || '';
+let allRows = [];
+let colMap = {};
+let currentDepth = 'all';
+let expandedNodes = new Set();
+
+// ─── INIT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (APPS_SCRIPT_URL) {
+    document.getElementById('apps-script-url').value = APPS_SCRIPT_URL;
+    document.getElementById('config-banner').style.display = 'none';
+    loadData();
+  }
+
+  // Depth buttons
+  document.getElementById('depth-btns').addEventListener('click', e => {
+    const btn = e.target.closest('.depth-btn');
+    if (!btn) return;
+    document.querySelectorAll('.depth-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentDepth = btn.dataset.depth;
+    applyDepthFilter();
+  });
+
+  // Search
+  let searchTimer;
+  document.getElementById('search').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(renderTable, 300);
+  });
+
+  document.getElementById('filter-produkt').addEventListener('change', renderTable);
+  document.getElementById('filter-erp').addEventListener('change', renderTable);
+});
+
+// ─── URL SAVE ─────────────────────────────────────────────────
+function saveUrl() {
+  const url = document.getElementById('apps-script-url').value.trim();
+  if (!url) return;
+  APPS_SCRIPT_URL = url;
+  localStorage.setItem('bom_script_url', url);
+  document.getElementById('config-banner').style.display = 'none';
+  loadData();
+}
+
+// ─── LOAD DATA ────────────────────────────────────────────────
+function loadData() {
+  if (!APPS_SCRIPT_URL) return;
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('bom-table').style.display = 'none';
+  document.getElementById('error-area').innerHTML = '';
+
+  const script = document.createElement('script');
+  const cbName = 'bomCallback_' + Date.now();
+  window[cbName] = function(data) {
+    document.getElementById('loading').style.display = 'none';
+    document.head.removeChild(script);
+    delete window[cbName];
+    processData(data);
+  };
+
+  script.src = APPS_SCRIPT_URL + '?callback=' + cbName;
+  script.onerror = () => {
+    document.getElementById('loading').style.display = 'none';
+    showError('Nie można połączyć się z Google Apps Script. Sprawdź URL i upewnij się że Web App jest opublikowany jako "Anyone".');
+  };
+  document.head.appendChild(script);
+
+  document.getElementById('last-update').textContent = 'Aktualizacja: ' + new Date().toLocaleTimeString('pl-PL');
+}
+
+function showError(msg) {
+  document.getElementById('error-area').innerHTML = `<div class="error-box">⚠ ${msg}</div>`;
+}
+
+// ─── PROCESS DATA ─────────────────────────────────────────────
+function processData(data) {
+  const { headers, rows } = data;
+
+  // Build column map
+  colMap = {};
+  headers.forEach((h, i) => colMap[h] = i);
+
+  allRows = rows.map(row => {
+    const lp = (row['Lp.'] || '').trim();
+    const level = lp === '' ? 0 : lp.split('.').length;
+    const segs = lp.split('.');
+    return { ...row, _lp: lp, _level: level, _segs: segs };
+  });
+
+  // Build children map
+  buildChildMap();
+
+  // Populate filters
+  populateFilters();
+
+  document.getElementById('stat-total').textContent = allRows.length;
+  renderTable();
+}
+
+function buildChildMap() {
+  // For each row, determine if it has children
+  allRows.forEach((row, i) => {
+    row._hasChildren = false;
+    row._rowIdx = i;
+  });
+
+  for (let i = 0; i < allRows.length - 1; i++) {
+    const curr = allRows[i];
+    const next = allRows[i + 1];
+    if (next._level > curr._level) {
+      curr._hasChildren = true;
+    }
+  }
+}
+
+function populateFilters() {
+  // Produkty
+  const produkty = [...new Set(allRows.map(r => r['Nazwa pliku'] || '').filter(Boolean))].sort();
+  const pSel = document.getElementById('filter-produkt');
+  pSel.innerHTML = '<option value="">— wszystkie —</option>';
+  produkty.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p.length > 60 ? p.substring(0, 60) + '…' : p;
+    pSel.appendChild(opt);
+  });
+  document.getElementById('stat-products').textContent = produkty.length;
+
+  // Operacje ERP
+  const ops = [...new Set(allRows.flatMap(r => (r['Operacje ERP'] || '').split('/').map(s => s.trim())).filter(Boolean))].sort();
+  const eSel = document.getElementById('filter-erp');
+  eSel.innerHTML = '<option value="">— wszystkie —</option>';
+  ops.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    eSel.appendChild(opt);
+  });
+}
+
+// ─── RENDER ───────────────────────────────────────────────────
+function renderTable() {
+  const filterProdukt = document.getElementById('filter-produkt').value;
+  const filterErp = document.getElementById('filter-erp').value;
+  const searchVal = document.getElementById('search').value.toLowerCase().trim();
+
+  const tbody = document.getElementById('bom-body');
+  tbody.innerHTML = '';
+
+  // Filter rows
+  let visible = 0;
+  const rows = allRows.filter(row => {
+    if (filterProdukt && row['Nazwa pliku'] !== filterProdukt) return false;
+    if (filterErp && !(row['Operacje ERP'] || '').includes(filterErp)) return false;
+    if (searchVal) {
+      const haystack = [row['Nazwa'], row['Opis'], row['Index ERP'], row['Operacje ERP']].join(' ').toLowerCase();
+      if (!haystack.includes(searchVal)) return false;
+    }
+    return true;
+  });
+
+  // Expand all matching rows' parents when searching
+  if (searchVal) {
+    expandedNodes = new Set(rows.map(r => r._lp));
+  }
+
+  rows.forEach(row => {
+    const level = row._level;
+    const lp = row._lp;
+    const indent = (level - 1) * 20;
+    const hasChildren = row._hasChildren;
+    const isExpanded = expandedNodes.has(lp);
+
+    const tr = document.createElement('tr');
+    tr.className = `bom-row level-${level}`;
+    tr.dataset.lp = lp;
+    tr.dataset.level = level;
+
+    // Depth filter
+    if (currentDepth !== 'all' && level > parseInt(currentDepth)) {
+      tr.classList.add('hidden');
+    }
+
+    const toggleHtml = hasChildren
+      ? `<button class="toggle-btn ${isExpanded ? 'expanded' : ''}" onclick="toggleNode('${lp}', this)">
+           ${isExpanded ? '−' : '+'}
+         </button>`
+      : `<button class="toggle-btn leaf">·</button>`;
+
+    const highlight = (text) => {
+      if (!searchVal || !text) return text || '';
+      return text.replace(new RegExp(searchVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+        m => `<mark>${m}</mark>`);
+    };
+
+    tr.innerHTML = `
+      <td>
+        <div class="lp-cell">
+          <span class="indent" style="width:${indent}px"></span>
+          ${toggleHtml}
+          <span class="lp-value">${lp}</span>
+        </div>
+      </td>
+      <td class="col-nazwa">${highlight(row['Nazwa'] || '')}</td>
+      <td class="col-opis wrap">${highlight(row['Opis'] || '')}</td>
+      <td class="col-szt">${row['Szt.'] || ''}</td>
+      <td class="col-index">${highlight(row['Materiał'] || '')}</td>
+      <td class="col-index">${highlight(row['Index ERP'] || '')}</td>
+      <td>${row['Operacje ERP'] ? `<span class="col-ops">${highlight(row['Operacje ERP'])}</span>` : '<span class="empty-ops">—</span>'}</td>
+      <td class="col-index">${row['Typ'] || ''}</td>
+    `;
+
+    tbody.appendChild(tr);
+    visible++;
+  });
+
+  document.getElementById('stat-visible').textContent = visible;
+  document.getElementById('bom-table').style.display = visible > 0 ? 'table' : 'none';
+
+  if (visible === 0 && allRows.length > 0) {
+    document.getElementById('error-area').innerHTML = '<div class="error-box">Brak wyników dla wybranych filtrów.</div>';
+  } else {
+    document.getElementById('error-area').innerHTML = '';
+  }
+
+  // Apply collapse state
+  applyCollapseState();
+}
+
+// ─── TREE EXPAND/COLLAPSE ─────────────────────────────────────
+function toggleNode(lp, btn) {
+  if (expandedNodes.has(lp)) {
+    expandedNodes.delete(lp);
+    btn.textContent = '+';
+    btn.classList.remove('expanded');
+  } else {
+    expandedNodes.add(lp);
+    btn.textContent = '−';
+    btn.classList.add('expanded');
+  }
+  applyCollapseState();
+}
+
+function applyCollapseState() {
+  if (currentDepth !== 'all') return; // depth filter handles visibility
+
+  const rows = document.querySelectorAll('.bom-row');
+  rows.forEach(tr => {
+    const lp = tr.dataset.lp;
+    const level = parseInt(tr.dataset.level);
+    if (level <= 1) {
+      tr.classList.remove('hidden');
+      return;
+    }
+    // Check if any ancestor is collapsed
+    const segs = lp.split('.');
+    let hidden = false;
+    for (let i = 1; i < segs.length; i++) {
+      const parentLp = segs.slice(0, i).join('.');
+      if (!expandedNodes.has(parentLp)) {
+        hidden = true;
+        break;
+      }
+    }
+    tr.classList.toggle('hidden', hidden);
+  });
+}
+
+function applyDepthFilter() {
+  const rows = document.querySelectorAll('.bom-row');
+  rows.forEach(tr => {
+    const level = parseInt(tr.dataset.level);
+    if (currentDepth === 'all') {
+      tr.classList.remove('hidden');
+      applyCollapseState();
+    } else {
+      tr.classList.toggle('hidden', level > parseInt(currentDepth));
+    }
+  });
+}
+
+function expandAll() {
+  document.querySelectorAll('.bom-row').forEach(tr => {
+    expandedNodes.add(tr.dataset.lp);
+  });
+  document.querySelectorAll('.toggle-btn:not(.leaf)').forEach(btn => {
+    btn.textContent = '−';
+  });
+  applyCollapseState();
+}
+
+function collapseAll() {
+  expandedNodes.clear();
+  document.querySelectorAll('.toggle-btn:not(.leaf)').forEach(btn => {
+    btn.textContent = '+';
+  });
+  applyCollapseState();
+}
+</script>
+</body>
+</html>
