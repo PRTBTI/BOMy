@@ -190,10 +190,10 @@
       <div class="help-popup" id="help-popup">
         <strong>Jak zaktualizować dane?</strong>
         <div class="help-steps">
-          <div class="help-step"><span class="help-step-num">1.</span><span>Wejdź na <code>github.com/PRTBTI/BOMy</code></span></div>
-          <div class="help-step"><span class="help-step-num">2.</span><span>Kliknij <code>Add file → Upload files</code></span></div>
-          <div class="help-step"><span class="help-step-num">3.</span><span>Wgraj plik o nazwie dokładnie <code>BOM_-_BAZA.xlsx</code> zastępując stary</span></div>
-          <div class="help-step"><span class="help-step-num">4.</span><span>Kliknij <code>Commit changes</code> — po ~1 min dane widoczne dla wszystkich</span></div>
+          <div class="help-step"><span class="help-step-num">1.</span><span>Otwórz arkusz <code>BOM_-_BAZA</code> w Google Sheets</span></div>
+          <div class="help-step"><span class="help-step-num">2.</span><span>Zaktualizuj dane w zakładce <code>BOMy</code></span></div>
+          <div class="help-step"><span class="help-step-num">3.</span><span>Kliknij <code>↻ Odśwież dane</code> na tej stronie</span></div>
+          <div class="help-step"><span class="help-step-num">✓</span><span>Dane są zawsze aktualne — pobierane na żywo z Google Sheets</span></div>
         </div>
       </div>
     </div>
@@ -250,6 +250,15 @@
 </div>
 
 <div class="main">
+  <div id="config-banner" style="display:none;background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.3);border-left:4px solid var(--orange);border-radius:4px;padding:16px 20px;margin-bottom:16px;">
+    <p style="color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">⚙ Konfiguracja połączenia</p>
+    <p style="color:var(--text2);font-size:13px;line-height:1.6;margin-bottom:10px;">Wklej URL Google Apps Script Web App (ten sam co poprzednio):<br>
+    <code style="background:var(--surface2);padding:1px 6px;border-radius:3px;color:var(--orange);font-size:11px;">https://script.google.com/macros/s/AKfycb.../exec</code></p>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="apps-script-url" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1;font-size:12px;">
+      <button class="btn primary" onclick="saveUrl()">Zapisz i załaduj</button>
+    </div>
+  </div>
   <div id="error-area"></div>
   <div class="loading" id="loading">
     <div class="spinner"></div>
@@ -272,13 +281,7 @@
 
 <script>
 // ── KONFIGURACJA ─────────────────────────────────────────────
-// Zmień REPO_USER i REPO_NAME jeśli repo ma inną nazwę
-const REPO_USER = 'PRTBTI';
-const REPO_NAME = 'BOMy';
-const FILE_NAME = 'BOM_-_BAZA.xlsx';
-const SHEET_NAME = 'BOMy';
-// URL do pliku raw na GitHub (omija cache przeglądarki przez timestamp)
-const FILE_URL = () => `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${FILE_NAME}?t=${Date.now()}`;
+let APPS_SCRIPT_URL = localStorage.getItem('bom_script_url') || '';
 // ─────────────────────────────────────────────────────────────
 
 let allRows = [];
@@ -307,7 +310,8 @@ function saveColState(){const s={};COLUMNS.forEach(c=>{s[c.key]={visible:c.visib
 
 window.addEventListener('DOMContentLoaded',()=>{
   loadColState();
-  loadData();
+  if(APPS_SCRIPT_URL){ document.getElementById('config-banner').style.display='none'; loadData(); }
+  else { document.getElementById('loading').style.display='none'; }
   document.getElementById('depth-btns').addEventListener('click',e=>{const btn=e.target.closest('.depth-btn');if(!btn)return;document.querySelectorAll('.depth-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentDepth=btn.dataset.depth;applyDepthFilter();});
   let st;document.getElementById('search').addEventListener('input',()=>{clearTimeout(st);st=setTimeout(renderTable,300);});
   document.getElementById('filter-produkt').addEventListener('change',renderTable);
@@ -319,52 +323,30 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 });
 
-async function loadData(){
+function saveUrl(){
+  const url=document.getElementById('apps-script-url').value.trim();
+  if(!url)return;
+  APPS_SCRIPT_URL=url;
+  localStorage.setItem('bom_script_url',url);
+  document.getElementById('config-banner').style.display='none';
+  loadData();
+}
+
+function loadData(){
+  if(!APPS_SCRIPT_URL){ document.getElementById('config-banner').style.display='block'; return; }
   document.getElementById('loading').style.display='flex';
   document.getElementById('bom-table').style.display='none';
   document.getElementById('toolbar').style.display='none';
   document.getElementById('statusbar').style.display='none';
   document.getElementById('error-area').innerHTML='';
-  document.getElementById('info-banner').style.display='none';
-  document.getElementById('loading-sub').textContent='Pobieranie: '+FILE_NAME;
-
-  try{
-    const resp = await fetch(FILE_URL());
-    if(!resp.ok) throw new Error(`HTTP ${resp.status} — plik nie istnieje w repozytorium lub repo jest prywatne.`);
-    document.getElementById('loading-sub').textContent='Przetwarzanie arkusza...';
-    const buf = await resp.arrayBuffer();
-    const wb = XLSX.read(new Uint8Array(buf),{type:'array'});
-
-    // Znajdź arkusz BOMy lub pierwszy dostępny
-    const preferred=['BOMy','BOM','bomy','bom'];
-    let sheet=wb.SheetNames[0];
-    for(const p of preferred){const f=wb.SheetNames.find(s=>s.toLowerCase()===p.toLowerCase());if(f){sheet=f;break;}}
-
-    const ws=wb.Sheets[sheet];
-    const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    if(raw.length<2)throw new Error('Arkusz jest pusty.');
-
-    const headers=raw[0].map(h=>String(h||'').trim());
-    const rows=[];
-    for(let i=1;i<raw.length;i++){
-      const row={};headers.forEach((h,j)=>{row[h]=raw[i][j]!==undefined&&raw[i][j]!==null?String(raw[i][j]).trim():'';});
-      if(Object.values(row).some(v=>v!==''))rows.push(row);
-    }
-
-    document.getElementById('loading').style.display='none';
+  document.getElementById('loading-sub').textContent='Łączenie z Google Sheets...';
+  const cb='bom_'+Date.now();const sc=document.createElement('script');
+  window[cb]=d=>{document.getElementById('loading').style.display='none';document.head.removeChild(sc);delete window[cb];
     document.getElementById('last-update').textContent='Aktualizacja: '+new Date().toLocaleTimeString('pl-PL');
-    document.getElementById('info-banner') && (document.getElementById('info-banner').style.display='none');
-    processData(rows,sheet);
-
-  }catch(err){
-    document.getElementById('loading').style.display='none';
-    let msg=`Nie można pobrać pliku <code>${FILE_NAME}</code> z GitHub.<br><br>`;
-    msg+=`<strong>Sprawdź:</strong><br>`;
-    msg+=`• Czy plik <code>${FILE_NAME}</code> istnieje w repozytorium <code>${REPO_USER}/${REPO_NAME}</code>?<br>`;
-    msg+=`• Czy repozytorium jest publiczne?<br>`;
-    msg+=`• Szczegóły błędu: <code>${err.message}</code>`;
-    document.getElementById('error-area').innerHTML=`<div class="error-box">⚠ ${msg}</div>`;
-  }
+    processData(d.rows,'BOMy');
+  };
+  sc.onerror=()=>{document.getElementById('loading').style.display='none';showError('Nie można połączyć się z Apps Script. Sprawdź URL.');};
+  sc.src=APPS_SCRIPT_URL+'?callback='+cb;document.head.appendChild(sc);
 }
 
 function toggleHelp(){
