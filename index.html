@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BOM Viewer | Dział Technologiczny BTI Gumkowski</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --bg:#0a0a0a; --bg2:#111111; --surface:#181818; --surface2:#202020;
@@ -56,7 +55,7 @@
   .depth-btn.active{background:var(--orange);color:#000;border-color:var(--orange);}
 
   .col-panel{position:relative;}
-  .col-dropdown{display:none;position:absolute;top:calc(100%+6px);left:0;background:var(--surface);border:1px solid var(--border2);border-radius:4px;padding:6px 0;min-width:210px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.7);}
+  .col-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border2);border-radius:4px;padding:6px 0;min-width:210px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.7);}
   .col-dropdown.open{display:block;}
   .col-item{display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:12px;color:var(--text2);user-select:none;transition:background 0.1s;}
   .col-item:hover{background:var(--surface2);color:var(--text);}
@@ -127,7 +126,7 @@
   .help-btn:hover{border-color:var(--orange);color:var(--orange);background:var(--orange-dim);}
   .help-btn.open{border-color:var(--orange);color:var(--orange);background:var(--orange-dim);}
   .help-popup{
-    display:none;position:absolute;top:calc(100%+8px);right:0;
+    display:none;position:absolute;top:calc(100% + 8px);right:0;
     background:var(--surface);border:1px solid var(--border2);
     border-top:2px solid var(--orange);
     border-radius:4px;padding:14px 16px;
@@ -341,12 +340,21 @@ function loadData(){
   document.getElementById('error-area').innerHTML='';
   document.getElementById('loading-sub').textContent='Łączenie z Google Sheets...';
   const cb='bom_'+Date.now();const sc=document.createElement('script');
-  window[cb]=d=>{document.getElementById('loading').style.display='none';document.head.removeChild(sc);delete window[cb];
+  const cleanup=()=>{document.getElementById('loading').style.display='none';if(sc.parentNode)sc.parentNode.removeChild(sc);delete window[cb];};
+  window[cb]=d=>{cleanup();
+    if(!d||!Array.isArray(d.rows)){showError('Apps Script zwrócił nieprawidłowe dane'+(d&&d.error?': '+d.error:'.'));return;}
     document.getElementById('last-update').textContent='Aktualizacja: '+new Date().toLocaleTimeString('pl-PL');
     processData(d.rows,'BOMy');
   };
-  sc.onerror=()=>{document.getElementById('loading').style.display='none';showError('Nie można połączyć się z Apps Script. Sprawdź URL.');};
+  sc.onerror=()=>{cleanup();showError('Nie można połączyć się z Apps Script. Sprawdź URL.',true);};
   sc.src=APPS_SCRIPT_URL+'?callback='+cb;document.head.appendChild(sc);
+}
+
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function showError(msg,showConfig){
+  document.getElementById('error-area').innerHTML=`<div class="error-box">${escapeHtml(msg)}</div>`;
+  if(showConfig){document.getElementById('apps-script-url').value=APPS_SCRIPT_URL;document.getElementById('config-banner').style.display='block';}
 }
 
 function toggleHelp(){
@@ -356,17 +364,8 @@ function toggleHelp(){
   popup.classList.toggle('open');
 }
 
-// Close help on outside click
-document.addEventListener('click',e=>{
-  const wrap=document.getElementById('help-wrap');
-  if(wrap && !wrap.contains(e.target)){
-    document.getElementById('help-btn').classList.remove('open');
-    document.getElementById('help-popup').classList.remove('open');
-  }
-});
-
 function processData(rows,sheetName){
-  allRows=rows.map((row,i)=>{const lp=(row['Lp.']||'').trim();return{...row,_lp:lp,_level:lp?lp.split('.').length:0,_rowIdx:i,_hasChildren:false};});
+  allRows=rows.map((row,i)=>{const lp=String(row['Lp.']??'').trim();return{...row,_lp:lp,_level:lp?lp.split('.').length:0,_rowIdx:i,_hasChildren:false};});
   for(let i=0;i<allRows.length-1;i++)if(allRows[i+1]._level>allRows[i]._level)allRows[i]._hasChildren=true;
   document.getElementById('toolbar').style.display='flex';
   document.getElementById('statusbar').style.display='flex';
@@ -376,11 +375,11 @@ function processData(rows,sheetName){
 }
 
 function populateFilters(){
-  const produkty=[...new Set(allRows.map(r=>r['Nazwa pliku']||'').filter(Boolean))].sort();
+  const produkty=[...new Set(allRows.map(r=>String(r['Nazwa pliku']??'')).filter(Boolean))].sort();
   const pSel=document.getElementById('filter-produkt');pSel.innerHTML='<option value="">— wszystkie —</option>';
   produkty.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p.length>60?p.slice(0,60)+'…':p;pSel.appendChild(o);});
   document.getElementById('stat-products').textContent=produkty.length;
-  const ops=[...new Set(allRows.flatMap(r=>(r['Operacje ERP']||'').split('/').map(s=>s.trim())).filter(Boolean))].sort();
+  const ops=[...new Set(allRows.flatMap(r=>String(r['Operacje ERP']??'').split('/').map(s=>s.trim())).filter(Boolean))].sort();
   const eSel=document.getElementById('filter-erp');eSel.innerHTML='<option value="">— wszystkie —</option>';
   ops.forEach(o=>{const el=document.createElement('option');el.value=o;el.textContent=o;eSel.appendChild(el);});
 }
@@ -390,7 +389,7 @@ function buildHeader(){
   COLUMNS.forEach((col,idx)=>{
     const th=document.createElement('th');th.id='th-'+idx;th.style.width=col.width+'px';
     if(!col.visible)th.classList.add('col-hidden');
-    th.innerHTML=`<span>${col.label}</span>`;
+    th.innerHTML=`<span>${escapeHtml(col.label)}</span>`;
     const h=document.createElement('div');h.className='resize-handle';
     h.addEventListener('mousedown',e=>startResize(e,th,idx));th.appendChild(h);tr.appendChild(th);
   });
@@ -408,7 +407,7 @@ function buildColPanel(){
   const dd=document.getElementById('col-dropdown');dd.innerHTML='';
   COLUMNS.forEach((col,idx)=>{
     const item=document.createElement('div');item.className='col-item';
-    item.innerHTML=`<div class="col-chk ${col.visible?'on':''}" id="chk${idx}"></div><span>${col.label}</span>`;
+    item.innerHTML=`<div class="col-chk ${col.visible?'on':''}" id="chk${idx}"></div><span>${escapeHtml(col.label)}</span>`;
     item.addEventListener('click',()=>{COLUMNS[idx].visible=!COLUMNS[idx].visible;document.getElementById('chk'+idx).classList.toggle('on',COLUMNS[idx].visible);document.getElementById('th-'+idx).classList.toggle('col-hidden',!COLUMNS[idx].visible);document.querySelectorAll(`.bom-row td[data-col="${COLUMNS[idx].key}"]`).forEach(td=>td.classList.toggle('col-hidden',!COLUMNS[idx].visible));saveColState();});
     dd.appendChild(item);
   });
@@ -421,13 +420,14 @@ function renderTable(){
   const sv=document.getElementById('search').value.toLowerCase().trim();
   const tbody=document.getElementById('bom-body');tbody.innerHTML='';
   const rows=allRows.filter(row=>{
-    if(fp&&row['Nazwa pliku']!==fp)return false;
-    if(fe&&!(row['Operacje ERP']||'').includes(fe))return false;
-    if(sv){const h=COLUMNS.map(c=>row[c.key]||'').join(' ').toLowerCase();if(!h.includes(sv))return false;}
+    if(fp&&String(row['Nazwa pliku']??'')!==fp)return false;
+    if(fe&&!String(row['Operacje ERP']??'').includes(fe))return false;
+    if(sv){const h=COLUMNS.map(c=>row[c.key]??'').join(' ').toLowerCase();if(!h.includes(sv))return false;}
     return true;
   });
   if(sv)expandedNodes=new Set(rows.map(r=>r._lp));
-  const hl=t=>!sv||!t?(t||''):String(t).replace(new RegExp(sv.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>`<mark>${m}</mark>`);
+  const re=sv?new RegExp('('+sv.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'):null;
+  const hl=t=>{const s=String(t??'');if(!re||!s)return escapeHtml(s);return s.split(re).map((p,i)=>i%2?`<mark>${escapeHtml(p)}</mark>`:escapeHtml(p)).join('');};
   rows.forEach(row=>{
     const level=row._level,lp=row._lp;
     const tr=document.createElement('tr');tr.className=`bom-row level-${level}`;tr.dataset.lp=lp;tr.dataset.level=level;
@@ -437,12 +437,12 @@ function renderTable(){
       if(!col.visible)td.classList.add('col-hidden');if(col.wrap)td.classList.add('wrap');
       if(col.special==='lp'){
         const indent=(level-1)*18,hasC=row._hasChildren,isExp=expandedNodes.has(lp);
-        td.innerHTML=`<div class="lp-cell"><span class="indent" style="width:${indent}px"></span>${hasC?`<button class="toggle-btn" onclick="toggleNode('${lp}',this)">${isExp?'−':'+'}</button>`:'<button class="toggle-btn leaf">·</button>'}<span class="lp-value">${lp}</span></div>`;
-      }else if(col.key==='Operacje ERP'){const v=row[col.key]||'';td.innerHTML=v?`<span class="col-ops">${hl(v)}</span>`:'<span class="empty-ops">—</span>';}
-      else if(col.key==='Nazwa'){td.className+=' col-nazwa';td.innerHTML=hl(row[col.key]||'');}
-      else if(col.key==='Opis'){td.className+=' col-opis';td.innerHTML=hl(row[col.key]||'');}
-      else if(col.key==='Szt.'){td.className+=' col-szt';td.textContent=row[col.key]||'';}
-      else{td.className+=' col-idx';td.innerHTML=hl(row[col.key]||'');}
+        td.innerHTML=`<div class="lp-cell"><span class="indent" style="width:${indent}px"></span>${hasC?`<button class="toggle-btn" data-lp="${escapeHtml(lp)}" onclick="toggleNode(this.dataset.lp,this)">${isExp?'−':'+'}</button>`:'<button class="toggle-btn leaf">·</button>'}<span class="lp-value">${escapeHtml(lp)}</span></div>`;
+      }else if(col.key==='Operacje ERP'){const v=row[col.key]??'';td.innerHTML=v!==''?`<span class="col-ops">${hl(v)}</span>`:'<span class="empty-ops">—</span>';}
+      else if(col.key==='Nazwa'){td.className+=' col-nazwa';td.innerHTML=hl(row[col.key]);}
+      else if(col.key==='Opis'){td.className+=' col-opis';td.innerHTML=hl(row[col.key]);}
+      else if(col.key==='Szt.'){td.className+=' col-szt';td.textContent=row[col.key]??'';}
+      else{td.className+=' col-idx';td.innerHTML=hl(row[col.key]);}
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -459,17 +459,16 @@ function applyCollapseState(){
   document.querySelectorAll('.bom-row').forEach(tr=>{
     const lp=tr.dataset.lp,level=parseInt(tr.dataset.level);
     if(level<=1){tr.classList.remove('hidden');return;}
-    const segs=lp.split('.');let hidden=false;
-    for(let i=1;i<segs.length;i++)if(!expandedNodes.has(segs.slice(0,i).join('.'))){hidden=true;break;}
+    let hidden=false,pos=lp.indexOf('.');
+    while(pos!==-1){if(!expandedNodes.has(lp.slice(0,pos))){hidden=true;break;}pos=lp.indexOf('.',pos+1);}
     tr.classList.toggle('hidden',hidden);
   });
 }
 function applyDepthFilter(){
-  document.querySelectorAll('.bom-row').forEach(tr=>{
-    const level=parseInt(tr.dataset.level);
-    if(currentDepth==='all'){tr.classList.remove('hidden');applyCollapseState();}
-    else tr.classList.toggle('hidden',level>parseInt(currentDepth));
-  });
+  // Dla "∞" stan zwinięcia liczony jest raz dla całej tabeli (wcześniej wywoływany dla każdego wiersza osobno - O(n²)).
+  if(currentDepth==='all'){applyCollapseState();return;}
+  const maxLevel=parseInt(currentDepth);
+  document.querySelectorAll('.bom-row').forEach(tr=>tr.classList.toggle('hidden',parseInt(tr.dataset.level)>maxLevel));
 }
 function expandAll(){document.querySelectorAll('.bom-row').forEach(tr=>expandedNodes.add(tr.dataset.lp));document.querySelectorAll('.toggle-btn:not(.leaf)').forEach(b=>b.textContent='−');applyCollapseState();}
 function collapseAll(){expandedNodes.clear();document.querySelectorAll('.toggle-btn:not(.leaf)').forEach(b=>b.textContent='+');applyCollapseState();}
